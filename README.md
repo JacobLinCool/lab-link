@@ -1,4 +1,4 @@
-# LabLink
+# Handup
 
 桌面版 Lab 呼叫系統（Svelte 5 + TypeScript）：繁體中文學生／助教介面、教室與座位編輯、即時呼叫、多人助教排序與完成紀錄。
 

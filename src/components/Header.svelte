@@ -5,7 +5,7 @@
 
 <header>
 	<div class="header-left">
-		<a class="brand" href="/" onclick={(e) => (e.preventDefault(), app.user && app.leaveRoom())}>LabLink</a>
+		<a class="brand" href="/" onclick={(e) => (e.preventDefault(), app.user && app.leaveRoom())}>Handup</a>
 		<div class="breadcrumb"><ChevronRight /> <span>{app.room ? `${app.room.name} 教室` : '教室總覽'}</span></div>
 	</div>
 	<div class="header-right">

@@ -8,7 +8,7 @@ import type { Call, CallAction, Role, Room, State, User } from './types.ts';
 const env = import.meta.env;
 export const live = Boolean(env.VITE_FIREBASE_API_KEY);
 
-const KEY = 'lablink-v3';
+const KEY = 'handup-v3';
 const empty = (): State => ({ rooms: [], calls: [], assistants: [], history: [] });
 const initial = (): State => ({
 	rooms: [{ id: '316', name: '316', course: '程式設計實習', layout: defaultLayout, ...makeLayout(defaultLayout) }],

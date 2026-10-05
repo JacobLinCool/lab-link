@@ -26,7 +26,7 @@
 			{/if}
 		</main>
 		<footer>
-			<span>LabLink · 讓每個問題，都被好好看見。</span>
+			<span>Handup · 讓每個問題，都被好好看見。</span>
 			<span><CircleHelp />需要協助？現場找助教</span>
 		</footer>
 	</div>
