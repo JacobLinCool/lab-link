@@ -1,8 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
-  // Replace with the institution's exact domain before deployment.
-  function member() { return request.auth != null && request.auth.token.email_verified == true && request.auth.token.email.matches('.*@example[.]edu[.]tw'); }
+  // Any verified Google account. To restrict to a school, add: && request.auth.token.email.matches('.*@example[.]edu[.]tw')
+  function member() { return request.auth != null && request.auth.token.email_verified == true; }
   function ta() { return member() && request.auth.token.ta == true; }
   function own(uid) { return member() && request.auth.uid == uid; }
   function call(uid) { return /databases/$(database)/documents/calls/$(uid); }
