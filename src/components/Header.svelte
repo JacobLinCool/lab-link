@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ChevronRight, GraduationCap, LogOut, ShieldCheck } from '@lucide/svelte';
-	import { app, live } from '../lib/app.svelte.ts';
+	import { app } from '../lib/app.svelte.ts';
 </script>
 
 <header>
@@ -16,12 +16,9 @@
 			</nav>
 			<span class="header-divider"></span>
 		{/if}
-		<span class="connection"><b></b>{live ? '即時連線' : '本機示範'}</span>
-		<span class="header-divider"></span>
 		<button class="role-chip" disabled={!app.user} onclick={app.logout}>
 			{#if app.isTa}<ShieldCheck />助教模式{:else}<GraduationCap />學生模式{/if}
 			{#if app.user}<LogOut />{/if}
 		</button>
-		<div class="mini-avatar">{app.user ? app.user.name[0] : 'L'}</div>
 	</div>
 </header>
