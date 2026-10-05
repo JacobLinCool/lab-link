@@ -116,15 +116,14 @@ export function watchAuth(fn: (user: User | null) => void): Unsubscribe {
 			reportError('請使用指定的學校網域帳號登入。');
 			return;
 		}
-		const token = await u.getIdTokenResult();
-		const profile = await getDoc(doc(db, 'profiles', u.uid));
 		const email = u.email ?? '';
+		const [token, profile, listed] = await Promise.all([u.getIdTokenResult(), getDoc(doc(db, 'profiles', u.uid)), getDoc(doc(db, 'tas', email))]);
 		user = {
 			uid: u.uid,
 			name: u.displayName || '同學',
 			email,
 			studentId: (profile.data()?.studentId as string | undefined) || email.split('@')[0],
-			role: token.claims.ta ? 'ta' : 'student',
+			role: token.claims.ta || listed.exists() ? 'ta' : 'student',
 		};
 		startSnapshots();
 		fn(user);

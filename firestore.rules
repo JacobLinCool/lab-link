@@ -3,12 +3,14 @@ service cloud.firestore {
  match /databases/{database}/documents {
   // Any verified Google account. To restrict to a school, add: && request.auth.token.email.matches('.*@example[.]edu[.]tw')
   function member() { return request.auth != null && request.auth.token.email_verified == true; }
-  function ta() { return member() && request.auth.token.ta == true; }
+  // TAs: the `ta` custom claim, or an entry in tas/{email} (lets TAs be added before their first sign-in).
+  function ta() { return member() && (request.auth.token.ta == true || exists(/databases/$(database)/documents/tas/$(request.auth.token.email))); }
   function own(uid) { return member() && request.auth.uid == uid; }
   function call(uid) { return /databases/$(database)/documents/calls/$(uid); }
   function room(id) { return /databases/$(database)/documents/rooms/$(id); }
   function lock(r,s) { return /databases/$(database)/documents/seatLocks/$(r+'_'+s); }
   match /profiles/{uid} { allow read: if own(uid) || ta(); allow write: if false; }
+  match /tas/{email} { allow read: if member() && request.auth.token.email == email; allow write: if false; }
   match /rooms/{id} {
    allow read: if member();
    allow create: if ta() && request.resource.data.activeCount == 0;

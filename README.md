@@ -22,7 +22,7 @@ npm run dev
 1. 建立 Firebase 專案與 Firestore，啟用 Firebase Auth 的 Google provider，加入網站部署網域至 Authorized domains。
 2. 複製 `.env.example` 為 `.env.local`，填入 Firebase Web App 公開設定。沒有 API key 時只會使用本機示範模式。`VITE_ALLOWED_DOMAIN` 留空表示不限制網域。
 3. 執行 `firebase deploy --only firestore:rules` 部署規則（專案記錄在 `.firebaserc`）。目前規則接受任何已驗證 email 的 Google 帳號；要限制學校網域，請依 `firestore.rules` 中 `member()` 的註解加上網域檢查，並設定 `VITE_ALLOWED_DOMAIN`。
-4. 使用受信任環境的 Firebase Admin SDK 將助教帳號設定 custom claim `{ ta: true }`，使用者重新登入才能更新身份。正式環境不能自行選助教身份。可在 `profiles/{uid}` 放 `{studentId: "B..."}`，沒有設定時使用 email 前綴。
+4. 新增助教：在 Firestore 建立 `tas/{email}` 文件（文件 ID 為小寫 email，內容可為空），對方登入時即為助教，不需先登入；已登入者需重新登入。此集合只能由主控台或 Admin 權限寫入。也可用 Firebase Admin SDK 設定 custom claim `{ ta: true }`。正式環境不能自行選助教身份。可在 `profiles/{uid}` 放 `{studentId: "B..."}`，沒有設定時使用 email 前綴。
 5. 第一位助教登入後新增教室，名稱填 316 即可；正式環境不自動寫入示範學生。教室由 Firestore 保存，含 seats、seatIds、activeCount 等欄位。
 
 ORS 目前只作登入介面預留。正式登入使用 Firebase Google OAuth；將來 ORS 整合需由受信任的認證服務簽發 Firebase custom token。
