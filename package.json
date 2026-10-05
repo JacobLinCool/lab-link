@@ -1,0 +1,20 @@
+{
+  "name": "lab-link",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "test": "node tests/planner.test.js",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "firebase": "^12.3.0",
+    "lucide": "^0.468.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0",
+    "wrangler": "^4.40.0"
+  }
+}

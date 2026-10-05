@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  // Replace with the institution's exact domain before deployment.
+  function member() { return request.auth != null && request.auth.token.email_verified == true && request.auth.token.email.matches('.*@example[.]edu[.]tw'); }
+  function ta() { return member() && request.auth.token.ta == true; }
+  function own(uid) { return member() && request.auth.uid == uid; }
+  function call(uid) { return /databases/$(database)/documents/calls/$(uid); }
+  function room(id) { return /databases/$(database)/documents/rooms/$(id); }
+  function lock(r,s) { return /databases/$(database)/documents/seatLocks/$(r+'_'+s); }
+  match /profiles/{uid} { allow read: if own(uid) || ta(); allow write: if false; }
+  match /rooms/{id} {
+   allow read: if member();
+   allow create: if ta() && request.resource.data.activeCount == 0;
+   allow update: if (ta() && (resource.data.activeCount == 0 || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activeCount']))) ||
+    (member() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activeCount']) && (
+     (request.resource.data.activeCount == resource.data.activeCount + 1 && !exists(call(request.auth.uid)) && getAfter(call(request.auth.uid)).data.room == id) ||
+     (request.resource.data.activeCount == resource.data.activeCount - 1 && get(call(request.auth.uid)).data.room == id && !existsAfter(call(request.auth.uid)))
+    ));
+  }
+  match /calls/{uid} {
+   allow read: if member();
+   allow create: if own(uid) && request.resource.data.keys().hasOnly(['uid','room','seat','name','createdAt','requestedAt','status','assistant']) && request.resource.data.uid == uid && request.resource.data.status == 'waiting' && request.resource.data.assistant == null && request.resource.data.seat in get(room(request.resource.data.room)).data.seatIds && request.resource.data.requestedAt == request.time && request.resource.data.createdAt <= request.time.toMillis()+10000 && request.resource.data.createdAt >= request.time.toMillis()-10000 && getAfter(lock(request.resource.data.room,request.resource.data.seat)).data.uid == uid && getAfter(room(request.resource.data.room)).data.activeCount == get(room(request.resource.data.room)).data.activeCount+1;
+   allow update: if ta() && resource.data.status == 'waiting' && request.resource.data.status == 'serving' && request.resource.data.assistant == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','assistant']) && getAfter(/databases/$(database)/documents/assistants/$(request.auth.uid)).data.currentCall == uid;
+   allow delete: if (own(uid) && resource.data.status == 'waiting' || ta() && resource.data.assistant == request.auth.uid) && !existsAfter(lock(resource.data.room,resource.data.seat)) && getAfter(room(resource.data.room)).data.activeCount == get(room(resource.data.room)).data.activeCount-1;
+  }
+  match /seatLocks/{id} {
+   allow read: if member();
+   allow create: if member() && request.resource.data.uid == request.auth.uid && id == request.resource.data.room+'_'+request.resource.data.seat && getAfter(call(request.auth.uid)).data.room == request.resource.data.room && getAfter(call(request.auth.uid)).data.seat == request.resource.data.seat;
+   allow delete: if (own(resource.data.uid) || ta()) && !existsAfter(call(resource.data.uid));
+  }
+  match /assistants/{uid} {
+   allow read: if member();
+   allow create, update: if ta() && request.auth.uid == uid && (!exists(/databases/$(database)/documents/assistants/$(uid)) || !('currentCall' in resource.data) || resource.data.currentCall == null || !existsAfter(call(resource.data.currentCall))) && (!('currentCall' in request.resource.data) || request.resource.data.currentCall == null || getAfter(call(request.resource.data.currentCall)).data.assistant == uid);
+  }
+  match /history/{id} {
+   allow read: if ta();
+   allow create: if ta() && request.resource.data.assistant == request.auth.uid && request.resource.data.finishedAt == request.time && get(call(request.resource.data.uid)).data.assistant == request.auth.uid && !existsAfter(call(request.resource.data.uid));
+  }
+ }
+}
