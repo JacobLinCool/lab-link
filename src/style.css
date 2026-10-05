@@ -84,6 +84,8 @@ h1{font-size:26px;font-weight:600;letter-spacing:-.5px}
 .seat.mine>span{color:#fff}
 .seat:disabled{opacity:.55}
 .seat.mine:disabled{opacity:1}
+.seat.unavailable:disabled{background:var(--soft);border-style:dashed;opacity:.55}
+.seat.unavailable small{font-size:10px}
 .room-back{display:flex;justify-content:space-between;align-items:center;margin-top:26px;padding:14px 0;color:#aaa;font-size:10px;border-top:1px dashed var(--line)}
 .room-back span:first-child,.room-back span:last-child{display:flex;align-items:center;gap:5px}
 .room-back svg{width:13px;height:13px}

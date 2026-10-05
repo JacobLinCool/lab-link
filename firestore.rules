@@ -8,6 +8,7 @@ service cloud.firestore {
   function own(uid) { return member() && request.auth.uid == uid; }
   function call(uid) { return /databases/$(database)/documents/calls/$(uid); }
   function room(id) { return /databases/$(database)/documents/rooms/$(id); }
+  function seatEnabled(r,s) { return get(room(r)).data.layout.kind != 'tables' || !s.matches('^(C|F)(9|1[0-6])$'); }
   function lock(r,s) { return /databases/$(database)/documents/seatLocks/$(r+'_'+s); }
   match /profiles/{uid} { allow read: if own(uid) || ta(); allow write: if false; }
   match /tas/{email} { allow read: if member() && request.auth.token.email == email; allow write: if false; }
@@ -22,7 +23,7 @@ service cloud.firestore {
   }
   match /calls/{uid} {
    allow read: if member();
-   allow create: if own(uid) && request.resource.data.keys().hasOnly(['uid','room','seat','name','createdAt','requestedAt','status','assistant']) && request.resource.data.uid == uid && request.resource.data.status == 'waiting' && request.resource.data.assistant == null && request.resource.data.seat in get(room(request.resource.data.room)).data.seatIds && request.resource.data.requestedAt == request.time && request.resource.data.createdAt <= request.time.toMillis()+10000 && request.resource.data.createdAt >= request.time.toMillis()-10000 && getAfter(lock(request.resource.data.room,request.resource.data.seat)).data.uid == uid && getAfter(room(request.resource.data.room)).data.activeCount == get(room(request.resource.data.room)).data.activeCount+1;
+   allow create: if own(uid) && seatEnabled(request.resource.data.room, request.resource.data.seat) && request.resource.data.keys().hasOnly(['uid','room','seat','name','createdAt','requestedAt','status','assistant']) && request.resource.data.uid == uid && request.resource.data.status == 'waiting' && request.resource.data.assistant == null && request.resource.data.seat in get(room(request.resource.data.room)).data.seatIds && request.resource.data.requestedAt == request.time && request.resource.data.createdAt <= request.time.toMillis()+10000 && request.resource.data.createdAt >= request.time.toMillis()-10000 && getAfter(lock(request.resource.data.room,request.resource.data.seat)).data.uid == uid && getAfter(room(request.resource.data.room)).data.activeCount == get(room(request.resource.data.room)).data.activeCount+1;
    allow update: if ta() && resource.data.status == 'waiting' && request.resource.data.status == 'serving' && request.resource.data.assistant == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','assistant']) && getAfter(/databases/$(database)/documents/assistants/$(request.auth.uid)).data.currentCall == uid;
    allow delete: if (own(uid) && resource.data.status == 'waiting' || ta() && resource.data.assistant == request.auth.uid) && !existsAfter(lock(resource.data.room,resource.data.seat)) && getAfter(room(resource.data.room)).data.activeCount == get(room(resource.data.room)).data.activeCount-1;
   }

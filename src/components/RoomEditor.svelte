@@ -2,6 +2,7 @@
 	import { Save, X } from '@lucide/svelte';
 	import { app } from '../lib/app.svelte.ts';
 	import { defaultLayout, floorGrid, makeLayout } from '../lib/planner.ts';
+	import { isSeatDisabled } from '../lib/seats.ts';
 	import type { Layout } from '../lib/types.ts';
 
 	const draft = $derived(app.draft!);
@@ -78,7 +79,9 @@
 				<button
 					type="button"
 					class="editor-seat"
-					class:removed={draft.removed.includes(s.id)}
+					class:removed={draft.removed.includes(s.id) || isSeatDisabled(draft.layout, s.id)}
+					disabled={isSeatDisabled(draft.layout, s.id)}
+					title={isSeatDisabled(draft.layout, s.id) ? `${s.id} · 停用` : s.id}
 					draggable="true"
 					style:grid-row={s.y + 1}
 					style:grid-column={s.x + 1}

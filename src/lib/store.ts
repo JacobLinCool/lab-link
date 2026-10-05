@@ -2,7 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, type Auth } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, runTransaction, serverTimestamp, getDoc, type Firestore, type Unsubscribe } from 'firebase/firestore';
 import { defaultLayout, makeLayout } from './planner.ts';
-import type { Call, CallAction, Role, Room, Seat, State, User } from './types.ts';
+import { isSeatDisabled } from './seats.ts';
+import type { Call, CallAction, Role, Room, State, User } from './types.ts';
 
 const env = import.meta.env;
 export const live = Boolean(env.VITE_FIREBASE_API_KEY);
@@ -156,6 +157,9 @@ export async function callSeat(room: string, seat: string) {
 	const uid = me.uid;
 	if (!live) {
 		state = read();
+		const target = state.rooms.find((r) => r.id === room);
+		if (!target || !target.seats.some((s) => s.id === seat)) throw Error('座位不存在。');
+		if (isSeatDisabled(target.layout, seat)) throw Error('這個座位已停用。');
 		if (state.calls.some((c) => c.uid === uid)) throw Error('你已經有一個呼叫，請先取消。');
 		if (state.calls.some((c) => c.room === room && c.seat === seat)) throw Error('這個座位正在呼叫。');
 		state.calls.push({ id: uid, uid, room, seat, name: me.name, createdAt: Date.now(), status: 'waiting' });
@@ -167,11 +171,13 @@ export async function callSeat(room: string, seat: string) {
 	await runTransaction(db, async (tx) => {
 		const roomRef = doc(db, 'rooms', room);
 		const [c, l, r] = await Promise.all([tx.get(ref), tx.get(lock), tx.get(roomRef)]);
-		if (!r.exists() || !(r.data().seats as Seat[]).some((s) => s.id === seat)) throw Error('座位不存在。');
+		const target = r.data() as Room | undefined;
+		if (!target || !target.seats.some((s) => s.id === seat)) throw Error('座位不存在。');
+		if (isSeatDisabled(target.layout, seat)) throw Error('這個座位已停用。');
 		if (c.exists() || l.exists()) throw Error('帳號已有呼叫，或座位已被使用。');
 		tx.set(ref, { uid, room, seat, name: me.name, createdAt: Date.now(), requestedAt: serverTimestamp(), status: 'waiting', assistant: null });
 		tx.set(lock, { uid, room, seat });
-		tx.update(roomRef, { activeCount: (r.data().activeCount || 0) + 1 });
+		tx.update(roomRef, { activeCount: (target.activeCount || 0) + 1 });
 	});
 }
 
