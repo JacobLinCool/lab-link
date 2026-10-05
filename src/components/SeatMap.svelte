@@ -22,6 +22,7 @@
 		}),
 	);
 	const grid = $derived(floorGrid(room.seats, room.tables ?? []));
+	const isRoom316 = $derived(/^316(?:\s*教室)?$/.test(room.name.trim()));
 </script>
 
 <div class="map-card">
@@ -39,6 +40,11 @@
 	<div class="room-map">
 		<div class="front"><div>講台 / 投影幕</div></div>
 		<div class="seating" style:grid-template-columns={grid.columns} style:grid-template-rows={grid.rows}>
+			{#if isRoom316}
+				<div class="room-entrance" style:grid-column="1" style:grid-row="9" aria-label="出入口，教室左側 A8 與 D1 之間">
+					<DoorOpen /><span>出入口</span>
+				</div>
+			{/if}
 			{#each room.tables ?? [] as t (t.id)}
 				<div class="table" style:grid-column="{t.x + 1} / span {t.w}" style:grid-row="{t.y + 1} / span {t.h}">{t.id}</div>
 			{/each}
@@ -62,10 +68,6 @@
 					{#if app.isTa && showRoutes && s.route}<b class="route-number">{s.order}</b>{/if}
 				</button>
 			{/each}
-		</div>
-		<div class="room-back">
-			<span><DoorOpen />出入口</span>
-			<span><DoorOpen />出入口</span>
 		</div>
 	</div>
 	<div class="map-legend">
